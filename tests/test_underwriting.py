@@ -26,7 +26,7 @@ class UnderwritingTests(unittest.TestCase):
                 "transferability": "verified",
             },
             "scenarios": [
-                {"name": "downside", "revenue_change": -0.25, "exit_multiple": 1},
+                {"name": "downside", "traffic_change": -0.25, "revenue_change": -0.10, "exit_multiple": 1},
                 {"name": "base", "exit_multiple": 2},
             ],
         })
@@ -39,6 +39,27 @@ class UnderwritingTests(unittest.TestCase):
         self.assertIsNotNone(result.irr)
         self.assertGreater(result.npv_at_target_return, 0)
         self.assertLess(result.scenarios[0].annual_cash_flow, result.scenarios[1].annual_cash_flow)
+
+    def test_renovation_and_traffic_are_included_in_price_and_risk(self):
+        self.deal.traffic.monthly_visits = 10_000
+        self.deal.traffic.organic_share = 0.70
+        self.deal.traffic.direct_share = 0.15
+        self.deal.traffic.top_source_share = 0.35
+        self.deal.traffic.six_month_trend = 0.10
+        self.deal.renovation.one_time_cost = 2_000
+        self.deal.renovation.monthly_cost = 100
+        self.deal.renovation.monthly_revenue_uplift = 600
+        result = underwrite(self.deal)
+        self.assertEqual(result.total_investment, 32_000)
+        self.assertEqual(result.renovation_payback_months, 4)
+        self.assertGreater(result.traffic_quality_score, 0.5)
+        self.assertEqual(result.scenarios[0].annual_visits, 90_000)
+
+    def test_high_trademark_risk_forces_pass(self):
+        self.deal.trademark_risk = "high"
+        result = underwrite(self.deal)
+        self.assertEqual(result.decision, "PASS")
+        self.assertTrue(any("trademark" in warning for warning in result.warnings))
 
     def test_unverified_evidence_cannot_produce_buy(self):
         self.deal.evidence = {}

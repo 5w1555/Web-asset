@@ -13,8 +13,8 @@ from .underwriting import deal_from_dict, result_to_dict, underwrite
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="webasset",
-        description="Analyze internal link opportunities across real-world websites.",
-        epilog="Examples:\n  webasset crawl https://example.com --limit 100\n  webasset analyze https://example.com -o results.json\n  webasset underwrite deal.json -o underwriting.json\n  webasset report results.json",
+        description="Evaluate, acquire, and improve traffic-producing digital assets.",
+        epilog="Examples:\n  webasset underwrite domain-deal.json -o underwriting.json\n  webasset compare deal-packets.json -o comparison.json\n  webasset crawl https://example.com --limit 100\n  webasset analyze https://example.com -o results.json",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -32,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     analyze_parser.add_argument("--timeout", type=float, default=15.0, help="Request timeout in seconds (default: 15.0)")
     analyze_parser.add_argument("--save-crawl", help="Also save raw crawl (default: crawl.results.json)")
 
-    underwrite_parser = subparsers.add_parser("underwrite", help="Underwrite one digital-asset acquisition from JSON")
+    underwrite_parser = subparsers.add_parser("underwrite", help="Price a domain/site plus its renovation plan from JSON")
     underwrite_parser.add_argument("input", help="Path to a deal JSON file")
     underwrite_parser.add_argument("-o", "--output", default="underwriting.json", help="Output file")
 
@@ -126,9 +126,13 @@ def main(argv: list[str] | None = None) -> int:
             result = result_to_dict(underwrite(deal))
             save_json(result, args.output)
             print(f"Decision: {result['decision']} | Maximum offer: {result['maximum_offer']:.2f}")
-            print(f"Annual cash flow: {result['normalized_annual_cash_flow']:.2f} | Evidence score: {result['evidence_score']:.0%}")
+            print(f"Total investment: {result['total_investment']:.2f} | Annual cash flow: {result['normalized_annual_cash_flow']:.2f}")
+            print(f"Evidence score: {result['evidence_score']:.0%} | Traffic quality: {result['traffic_quality_score']:.0%}")
             irr = "n/a" if result["irr"] is None else f"{result['irr']:.1%}"
             print(f"Payback: {result['payback_years'] or 'n/a'} years | IRR: {irr} | NPV: {result['npv_at_target_return']:.2f}")
+            renovation_payback = result["renovation_payback_months"]
+            if renovation_payback is not None:
+                print(f"Renovation payback: {renovation_payback:.1f} months")
             for warning in result["warnings"]:
                 print(f"Warning: {warning}")
             print(f"Saved to {args.output}")
