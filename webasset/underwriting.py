@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from .models import DealInput, MonthlyFinancials, Scenario, ScenarioResult, UnderwritingResult
+from .models import (
+    DealInput,
+    MonthlyFinancials,
+    RenovationPlan,
+    Scenario,
+    ScenarioResult,
+    TrafficMetrics,
+    UnderwritingResult,
+)
 
 
 REQUIRED_EVIDENCE = {"financials", "analytics", "bank_statements", "transferability"}
@@ -14,6 +22,8 @@ def deal_from_dict(data: dict) -> DealInput:
     """Build a deal from the JSON input contract."""
     financials = [MonthlyFinancials(**item) for item in data.get("financials", [])]
     scenarios = [Scenario(**item) for item in data.get("scenarios", [])]
+    traffic = TrafficMetrics(**data.get("traffic", {}))
+    renovation = RenovationPlan(**data.get("renovation", {}))
     return DealInput(
         name=data["name"],
         asset_type=data.get("asset_type", "unknown"),
@@ -26,6 +36,10 @@ def deal_from_dict(data: dict) -> DealInput:
         holding_years=int(data.get("holding_years", 5)),
         evidence=data.get("evidence", {}),
         scenarios=scenarios,
+        traffic=traffic,
+        renovation=renovation,
+        revenue_concentration=float(data.get("revenue_concentration", 0.0)),
+        trademark_risk=str(data.get("trademark_risk", "unknown")),
     )
 
 
@@ -73,29 +87,69 @@ def _evidence_score(evidence: dict[str, str]) -> tuple[float, list[str]]:
     return min(1.0, score), warnings
 
 
+def _traffic_quality_score(traffic: TrafficMetrics) -> float:
+    """Score durable, diversified acquisition traffic without inventing precision."""
+    if traffic.monthly_visits <= 0:
+        return 0.0
+    organic = min(1.0, max(0.0, traffic.organic_share))
+    direct = min(1.0, max(0.0, traffic.direct_share))
+    diversification = 1 - min(1.0, max(0.0, traffic.top_source_share))
+    trend = min(1.0, max(0.0, (traffic.six_month_trend + 0.30) / 0.60))
+    return round(0.35 * organic + 0.20 * direct + 0.30 * diversification + 0.15 * trend, 3)
+
+
+def _risk_warnings(deal: DealInput) -> list[str]:
+    warnings: list[str] = []
+    if deal.traffic.monthly_visits <= 0:
+        warnings.append("no traffic baseline supplied; traffic durability cannot be assessed")
+    elif deal.traffic.top_source_share > 0.60:
+        warnings.append("traffic concentration is high: one source supplies over 60% of visits")
+    if deal.traffic.six_month_trend < -0.15:
+        warnings.append("traffic has declined more than 15% over six months")
+    if deal.revenue_concentration > 0.50:
+        warnings.append("revenue concentration is high: one source supplies over 50% of revenue")
+    if deal.trademark_risk.lower() in {"high", "confirmed"}:
+        warnings.append("high trademark risk requires legal clearance before acquisition")
+    if deal.renovation.launch_months > 6:
+        warnings.append("renovation plan delays launch by more than six months")
+    return warnings
+
+
 def underwrite(deal: DealInput) -> UnderwritingResult:
     """Underwrite a deal using cash flow, return, evidence, and scenarios."""
     monthly_revenue, monthly_expenses = _monthly_revenue_expenses(deal)
     monthly_cash_flow = monthly_revenue - monthly_expenses - deal.replacement_labor_monthly
     annual_cash_flow = monthly_cash_flow * 12
-    total_cost = deal.asking_price + deal.transaction_costs + deal.working_capital
+    renovation = deal.renovation
+    total_cost = deal.asking_price + deal.transaction_costs + deal.working_capital + renovation.one_time_cost
     roi = annual_cash_flow / total_cost if total_cost > 0 else 0.0
     payback = total_cost / annual_cash_flow if annual_cash_flow > 0 else None
     evidence_score, warnings = _evidence_score(deal.evidence)
+    warnings.extend(_risk_warnings(deal))
+    traffic_quality_score = _traffic_quality_score(deal.traffic)
+    incremental_monthly_profit = renovation.monthly_revenue_uplift - renovation.monthly_cost
+    renovation_payback = (
+        renovation.launch_months + renovation.one_time_cost / incremental_monthly_profit
+        if incremental_monthly_profit > 0 and renovation.one_time_cost > 0
+        else None
+    )
 
     scenarios = deal.scenarios or [Scenario(name="base", exit_multiple=0.0)]
     scenario_results = []
     for scenario in scenarios:
-        scenario_revenue = monthly_revenue * 12 * (1 + scenario.revenue_change)
-        scenario_expenses = monthly_expenses * 12 * (1 + scenario.expense_change)
+        traffic_factor = (1 + scenario.traffic_change) * (1 + scenario.revenue_per_visit_change)
+        scenario_revenue = (monthly_revenue * traffic_factor + renovation.monthly_revenue_uplift) * 12 * (1 + scenario.revenue_change)
+        scenario_expenses = (monthly_expenses + renovation.monthly_cost) * 12 * (1 + scenario.expense_change)
         scenario_cash_flow = scenario_revenue - scenario_expenses - deal.replacement_labor_monthly * 12
+        gross_maximum = _maximum_offer(scenario_cash_flow, deal.target_annual_return, deal.holding_years, scenario.exit_multiple)
         scenario_results.append(ScenarioResult(
             name=scenario.name,
             annual_cash_flow=scenario_cash_flow,
             payback_years=total_cost / scenario_cash_flow if scenario_cash_flow > 0 else None,
             cash_on_cash_roi=scenario_cash_flow / total_cost if total_cost > 0 else 0.0,
-            maximum_offer=_maximum_offer(scenario_cash_flow, deal.target_annual_return, deal.holding_years, scenario.exit_multiple),
+            maximum_offer=max(0.0, gross_maximum - deal.transaction_costs - deal.working_capital - renovation.one_time_cost),
             terminal_value=scenario_cash_flow * max(0.0, scenario.exit_multiple),
+            annual_visits=deal.traffic.monthly_visits * 12 * (1 + scenario.traffic_change) + renovation.expected_monthly_visits_uplift * 12,
         ))
 
     downside = next((item for item in scenario_results if item.name.lower() == "downside"), scenario_results[0])
@@ -104,11 +158,14 @@ def underwrite(deal: DealInput) -> UnderwritingResult:
     npv_at_target_return = _npv(annual_cash_flow, deal.target_annual_return, deal.holding_years, base_exit_value, total_cost)
     irr = _irr(annual_cash_flow, deal.holding_years, base_exit_value, total_cost)
 
-    if evidence_score < 1.0:
+    fatal_risk = deal.trademark_risk.lower() in {"high", "confirmed"}
+    if fatal_risk:
+        decision = "PASS"
+    elif evidence_score < 1.0:
         decision = "PASS" if evidence_score == 0.0 else "NEGOTIATE"
     elif downside.cash_on_cash_roi < deal.target_annual_return:
         decision = "PASS"
-    elif deal.asking_price + deal.transaction_costs + deal.working_capital > downside.maximum_offer:
+    elif deal.asking_price > downside.maximum_offer:
         decision = "NEGOTIATE"
     else:
         decision = "BUY"
@@ -124,6 +181,9 @@ def underwrite(deal: DealInput) -> UnderwritingResult:
         npv_at_target_return=npv_at_target_return,
         irr=irr,
         maximum_offer=downside.maximum_offer,
+        total_investment=total_cost,
+        traffic_quality_score=traffic_quality_score,
+        renovation_payback_months=renovation_payback,
         evidence_score=evidence_score,
         decision=decision,
         warnings=warnings,
