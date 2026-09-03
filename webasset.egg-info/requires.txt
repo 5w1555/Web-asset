@@ -1,0 +1,5 @@
+httpx>=0.27
+selectolax>=0.3.21
+trafilatura>=1.8
+scikit-learn>=1.4
+numpy>=1.26

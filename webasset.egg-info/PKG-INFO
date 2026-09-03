@@ -1,0 +1,47 @@
+Metadata-Version: 2.4
+Name: webasset
+Version: 0.1.0
+Summary: Local website crawler and internal-link recommender
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: httpx>=0.27
+Requires-Dist: selectolax>=0.3.21
+Requires-Dist: trafilatura>=1.8
+Requires-Dist: scikit-learn>=1.4
+Requires-Dist: numpy>=1.26
+
+# webasset
+
+A local Python CLI for finding useful internal-link opportunities across a website. It crawls same-site HTML pages, extracts clean text, compares pages with TF-IDF cosine similarity, groups related pages, measures graph connectivity, and writes explainable recommendations.
+
+## Install
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+pip install -e .
+```
+
+## Commands
+
+```powershell
+webasset crawl https://example.com --limit 100 -o crawl.json
+webasset analyze https://example.com --limit 100 -o results.json
+webasset report results.json
+```
+
+`analyze` prints recommendations in the form `source -> target`, similarity percentage, suggested anchor text, and an explanation. It skips links that already exist and limits each source to its three strongest targets. Pages with no inbound links are flagged as orphans; pages with very few total connections are flagged as weakly connected.
+
+The JSON report contains page metadata, headings, keywords, cluster IDs, inbound/outbound counts, importance scores, and recommendation records. `--embeddings` records an explicit embedding-provider hook in the output while keeping this local MVP dependency-free beyond the requested analysis stack. Future upgrades can replace the similarity function with sentence embeddings, use Search Console keyword data, and score anchor placement from surrounding HTML context.
+
+## Development
+
+Run without installation from the project root:
+
+```powershell
+python -m webasset --help
+python -m compileall webasset
+```
+
+The crawler is intentionally conservative: it follows HTTP(S) HTML URLs on the root hostname, removes fragments, normalizes trailing slashes, follows redirects, and stores errors rather than stopping the whole crawl.

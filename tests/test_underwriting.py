@@ -1,0 +1,76 @@
+import io
+import json
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+
+from webasset.cli import main, print_report
+from webasset.underwriting import deal_from_dict, underwrite
+
+
+class UnderwritingTests(unittest.TestCase):
+    def setUp(self):
+        self.deal = deal_from_dict({
+            "name": "Example Content Site",
+            "asset_type": "content",
+            "asking_price": 30000,
+            "financials": [
+                {"period": "2026-01", "revenue": 6000, "operating_expenses": 2000},
+                {"period": "2026-02", "revenue": 6000, "operating_expenses": 2000},
+            ],
+            "evidence": {
+                "financials": "verified",
+                "analytics": "verified",
+                "bank_statements": "verified",
+                "transferability": "verified",
+            },
+            "scenarios": [
+                {"name": "downside", "revenue_change": -0.25, "exit_multiple": 1},
+                {"name": "base", "exit_multiple": 2},
+            ],
+        })
+
+    def test_normalizes_cash_flow_and_orders_scenarios(self):
+        result = underwrite(self.deal)
+        self.assertEqual(result.normalized_monthly_cash_flow, 4000)
+        self.assertEqual(result.normalized_annual_cash_flow, 48000)
+        self.assertEqual(result.decision, "BUY")
+        self.assertIsNotNone(result.irr)
+        self.assertGreater(result.npv_at_target_return, 0)
+        self.assertLess(result.scenarios[0].annual_cash_flow, result.scenarios[1].annual_cash_flow)
+
+    def test_unverified_evidence_cannot_produce_buy(self):
+        self.deal.evidence = {}
+        result = underwrite(self.deal)
+        self.assertEqual(result.decision, "PASS")
+        self.assertTrue(result.warnings)
+
+    def test_report_filter_excludes_low_scores(self):
+        report = {
+            "recommendations": [
+                {"source": "a", "target": "b", "score_percent": 80, "anchor_text": "good"},
+                {"source": "c", "target": "d", "score_percent": 20, "anchor_text": "weak"},
+            ]
+        }
+        output = io.StringIO()
+        with redirect_stdout(output):
+            print_report(report, confidence_filter="high")
+        self.assertIn("good", output.getvalue())
+        self.assertNotIn("weak", output.getvalue())
+
+    def test_cli_underwrite_writes_json(self):
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "deal.json"
+            output_path = Path(directory) / "result.json"
+            input_path.write_text(json.dumps({
+                "name": "CLI Deal",
+                "asking_price": 1000,
+                "financials": [{"period": "2026-01", "revenue": 1000, "operating_expenses": 100}],
+            }))
+            self.assertEqual(main(["underwrite", str(input_path), "-o", str(output_path)]), 0)
+            self.assertEqual(json.loads(output_path.read_text())["decision"], "PASS")
+
+
+if __name__ == "__main__":
+    unittest.main()

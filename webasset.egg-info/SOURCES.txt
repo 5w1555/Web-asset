@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+webasset/__init__.py
+webasset/__main__.py
+webasset/cli.py
+webasset/core.py
+webasset.egg-info/PKG-INFO
+webasset.egg-info/SOURCES.txt
+webasset.egg-info/dependency_links.txt
+webasset.egg-info/entry_points.txt
+webasset.egg-info/requires.txt
+webasset.egg-info/top_level.txt

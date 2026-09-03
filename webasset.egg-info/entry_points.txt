@@ -1,0 +1,2 @@
+[console_scripts]
+webasset = webasset.cli:main

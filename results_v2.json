@@ -1,0 +1,123 @@
+{
+  "root_url": "https://sportimed.de/",
+  "crawled_at": "2026-08-28T01:06:19.919954+00:00",
+  "pages": [
+    {
+      "url": "https://sportimed.de/",
+      "title": "Neue Online Casinos 2026 – Newcomer Test komplett",
+      "headings": [
+        "Neue Online Casinos 2026 – der Newcomer Test",
+        "Betalright – Testsieger mit MGA-Lizenz und schnellen Auszahlungen",
+        "Legendplay – Großzügiger Willkommensbonus für Neueinsteiger",
+        "Royalistplay – Freispiel-König mit über 200 Gratis-Drehungen",
+        "Directionbet – Starker Ersteinzahlungsbonus von 200%",
+        "Myriad – Größte Spielauswahl mit über 4.000 Titeln",
+        "Winamax – Etablierte Marke mit Doppellizenz",
+        "Duelz – Gamification-Pionier mit einzigartigem Spielkonzept",
+        "Ladbrokes – Traditionsmarke mit modernem Online-Auftritt",
+        "NY Spins – Amerikanisches Flair mit Krypto-Fokus",
+        "Casinoluck – Bewährte Qualität seit 1999",
+        "Was macht neue Online Casinos so attraktiv?",
+        "Rechtliche Situation für Online Casinos in Deutschland",
+        "Kriterien für die Auswahl des besten neuen Casinos",
+        "Lizenzierung und Sicherheit",
+        "Bonusangebote und Bedingungen",
+        "Zahlungsmethoden in neuen Online Casinos",
+        "Spielangebot bei neuen Casinos",
+        "Spielautomaten und Slots",
+        "Tischspiele und Live Casino",
+        "Kontoverifizierung und KYC-Prozess",
+        "Mobile Casinos und Apps",
+        "Kundenservice bei neuen Anbietern",
+        "Verantwortungsvolles Spielen",
+        "Steuern auf Casino-Gewinne in Deutschland",
+        "Trends bei neuen Online Casinos 2026",
+        "Häufig gestellte Fragen zu neuen Online Casinos",
+        "Sind neue Online Casinos sicher und seriös?",
+        "Welche Vorteile bieten neue Casinos gegenüber etablierten Anbietern?",
+        "Wie lange dauern Auszahlungen bei neuen Online Casinos?",
+        "Welche Spiele sind in neuen deutschen Online Casinos verfügbar?",
+        "Kann ich in neuen Casinos mit Kryptowährungen spielen?",
+        "Was passiert bei Problemen mit einem neuen Casino?",
+        "Gibt es bei neuen Casinos Boni ohne Einzahlung?",
+        "Wie erkenne ich ein unseriöses neues Casino?"
+      ],
+      "keywords": [
+        "casinos",
+        "online",
+        "neue",
+        "online casinos",
+        "spieler",
+        "casino",
+        "neue online",
+        "bieten",
+        "neue casinos",
+        "spielen"
+      ],
+      "cluster": 0,
+      "classification": "service",
+      "language": "de",
+      "incoming_links": 29,
+      "outgoing_links": 4,
+      "content_length": 29124,
+      "content_quality": 1.0,
+      "boilerplate_ratio": 0.0,
+      "curation_flags": []
+    },
+    {
+      "url": "https://sportimed.de/?manufacturers_id=11",
+      "title": "Blog - sportimed",
+      "headings": [
+        "Nichts gefunden"
+      ],
+      "keywords": [
+        "kontakt",
+        "sportimed",
+        "suchfunktion",
+        "suchen kontakt",
+        "suchen",
+        "springen",
+        "konnte leider",
+        "nichts gefunden",
+        "nichts",
+        "konnte"
+      ],
+      "cluster": 1,
+      "classification": "article",
+      "language": "de",
+      "incoming_links": 2,
+      "outgoing_links": 4,
+      "content_length": 169,
+      "content_quality": 0.2,
+      "boilerplate_ratio": 0.0,
+      "curation_flags": []
+    }
+  ],
+  "recommendations": [],
+  "statistics": {
+    "crawl": {
+      "requested": 34,
+      "successful": 29,
+      "errors": 1,
+      "redirects": 0,
+      "non_html": 0,
+      "off_domain": 4
+    },
+    "curation": {
+      "raw_pages": 30,
+      "curated_pages": 30,
+      "near_duplicates": 25,
+      "flagged_pages": 28,
+      "usable_for_analysis": 2
+    },
+    "semantic": {
+      "pages": 2,
+      "keywords_extracted": 2,
+      "clusters": 2
+    },
+    "recommendations": {
+      "total": 0,
+      "high_confidence": 0
+    }
+  }
+}

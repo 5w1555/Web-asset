@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webasset"
+version = "0.1.0"
+description = "Local website crawler and internal-link recommender"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "httpx>=0.27",
+  "selectolax>=0.3.21",
+  "trafilatura>=1.8",
+  "scikit-learn>=1.4",
+  "numpy>=1.26",
+]
+
+[project.scripts]
+webasset = "webasset.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["webasset*"]
