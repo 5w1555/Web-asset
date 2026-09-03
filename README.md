@@ -8,6 +8,7 @@ It is built for the common workflow: buy a domain or neglected site, add useful 
 
 - **What is the highest purchase price that still meets my return hurdle?** `maximum_offer` deducts transaction costs, working capital, and the one-time renovation budget.
 - **Will the improvement work pay for itself?** Provide launch time, build cost, ongoing cost, and expected revenue/traffic lift to calculate renovation payback.
+- **What should I improve after buying?** The underwriting report turns traffic, concentration, and renovation inputs into an input-backed value-improvement plan.
 - **Is the traffic worth owning?** Traffic quality rewards organic/direct demand, diversification, and a stable six-month trend; it flags one-source dependency.
 - **What can break the deal?** Evidence gates prevent an unverified deal from being a `BUY`; high trademark risk is an automatic `PASS`.
 - **Which deal deserves attention first?** Compare deal packets, sorted by downside maximum offer.
@@ -74,6 +75,8 @@ webasset compare deal-packets.json -o comparison.json
 ```
 
 All shares and changes are decimal values: `0.25` means 25%; `-0.10` means a 10% decline. Scenario traffic and revenue-per-visit changes compound before the scenario revenue adjustment. A missing traffic baseline does not fabricate a score: it produces a warning and a zero traffic-quality score.
+
+The `underwrite` command prints a concise investment memo and writes the complete version to JSON. Its `improvement_actions` identify practical ways to increase value—such as growing organic demand, building direct traffic, diversifying a concentrated source, reversing a decline, or executing a profitable renovation. They are recommendations based only on the facts supplied in the deal packet, not claims that a result is guaranteed.
 
 ### Decision rules
 

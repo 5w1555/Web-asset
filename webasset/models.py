@@ -98,4 +98,5 @@ class UnderwritingResult:
     evidence_score: float
     decision: str
     warnings: list[str]
+    improvement_actions: list[str]
     scenarios: list[ScenarioResult]

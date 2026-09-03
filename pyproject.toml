@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "webasset"
 version = "0.1.0"
-description = "Local website crawler and internal-link recommender"
+description = "CLI for underwriting, buying, and improving traffic-producing websites"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
