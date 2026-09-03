@@ -55,6 +55,28 @@ class UnderwritingTests(unittest.TestCase):
         self.assertGreater(result.traffic_quality_score, 0.5)
         self.assertEqual(result.scenarios[0].annual_visits, 90_000)
 
+    def test_improvement_actions_explain_how_to_build_value(self):
+        self.deal.traffic.monthly_visits = 10_000
+        self.deal.traffic.organic_share = 0.20
+        self.deal.traffic.direct_share = 0.05
+        self.deal.traffic.top_source_share = 0.70
+        self.deal.traffic.six_month_trend = -0.10
+        self.deal.revenue_concentration = 0.60
+        result = underwrite(self.deal)
+        plan = " ".join(result.improvement_actions).lower()
+        self.assertIn("organic", plan)
+        self.assertIn("email", plan)
+        self.assertIn("diversify acquisition", plan)
+        self.assertIn("traffic decline", plan)
+        self.assertIn("diversify revenue", plan)
+
+    def test_base_valuation_includes_renovation_cash_flow(self):
+        self.deal.renovation.monthly_cost = 100
+        self.deal.renovation.monthly_revenue_uplift = 600
+        result = underwrite(self.deal)
+        self.assertEqual(result.scenarios[1].annual_cash_flow, 54_000)
+        self.assertGreater(result.npv_at_target_return, 0)
+
     def test_high_trademark_risk_forces_pass(self):
         self.deal.trademark_risk = "high"
         result = underwrite(self.deal)

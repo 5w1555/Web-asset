@@ -135,6 +135,9 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Renovation payback: {renovation_payback:.1f} months")
             for warning in result["warnings"]:
                 print(f"Warning: {warning}")
+            print("Value-improvement plan:")
+            for action in result["improvement_actions"]:
+                print(f"- {action}")
             print(f"Saved to {args.output}")
 
         elif args.command == "compare":

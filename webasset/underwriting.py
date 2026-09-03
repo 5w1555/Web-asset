@@ -115,6 +115,36 @@ def _risk_warnings(deal: DealInput) -> list[str]:
     return warnings
 
 
+def _improvement_actions(deal: DealInput) -> list[str]:
+    """Return specific, input-backed work that can improve an asset's value."""
+    actions: list[str] = []
+    traffic = deal.traffic
+    renovation = deal.renovation
+    if traffic.monthly_visits <= 0:
+        actions.append("Get read-only analytics access and establish a traffic baseline before valuing growth.")
+    if traffic.organic_share < 0.40:
+        actions.append("Build durable search demand with useful content and technical SEO; organic traffic is below 40%.")
+    if traffic.direct_share < 0.10:
+        actions.append("Add email capture and repeat-visitor journeys to grow direct traffic and reduce acquisition dependence.")
+    if traffic.top_source_share > 0.60:
+        actions.append("Diversify acquisition channels; one traffic source contributes over 60% of visits.")
+    if traffic.six_month_trend < 0:
+        actions.append("Diagnose and reverse the six-month traffic decline before paying for a growth multiple.")
+    if deal.revenue_concentration > 0.50:
+        actions.append("Diversify revenue sources because a single source supplies over half of revenue.")
+    if renovation.one_time_cost > 0:
+        uplift = renovation.monthly_revenue_uplift - renovation.monthly_cost
+        if uplift > 0:
+            actions.append(
+                f"Execute the renovation plan: it is modeled to add {uplift:.2f} in monthly profit after operating cost."
+            )
+        else:
+            actions.append("Rework the renovation plan: its modeled recurring uplift does not cover its monthly cost.")
+    if not actions:
+        actions.append("Protect the verified cash flow with documented operating procedures and continue testing monetization improvements.")
+    return actions
+
+
 def underwrite(deal: DealInput) -> UnderwritingResult:
     """Underwrite a deal using cash flow, return, evidence, and scenarios."""
     monthly_revenue, monthly_expenses = _monthly_revenue_expenses(deal)
@@ -155,8 +185,14 @@ def underwrite(deal: DealInput) -> UnderwritingResult:
     downside = next((item for item in scenario_results if item.name.lower() == "downside"), scenario_results[0])
     base_scenario = next((item for item in scenario_results if item.name.lower() == "base"), scenario_results[0])
     base_exit_value = base_scenario.terminal_value
-    npv_at_target_return = _npv(annual_cash_flow, deal.target_annual_return, deal.holding_years, base_exit_value, total_cost)
-    irr = _irr(annual_cash_flow, deal.holding_years, base_exit_value, total_cost)
+    npv_at_target_return = _npv(
+        base_scenario.annual_cash_flow,
+        deal.target_annual_return,
+        deal.holding_years,
+        base_exit_value,
+        total_cost,
+    )
+    irr = _irr(base_scenario.annual_cash_flow, deal.holding_years, base_exit_value, total_cost)
 
     fatal_risk = deal.trademark_risk.lower() in {"high", "confirmed"}
     if fatal_risk:
@@ -187,6 +223,7 @@ def underwrite(deal: DealInput) -> UnderwritingResult:
         evidence_score=evidence_score,
         decision=decision,
         warnings=warnings,
+        improvement_actions=_improvement_actions(deal),
         scenarios=scenario_results,
     )
 
